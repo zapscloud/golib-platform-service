@@ -1,7 +1,6 @@
 package platform_services
 
 import (
-	"fmt"
 	"log"
 	"strings"
 
@@ -15,11 +14,11 @@ import (
 // InvoiceService - Invoices Service structure
 type InvoiceService interface {
 	List(filter string, sort string, skip int64, limit int64) (utils.Map, error)
-	Get(invoiceId string) (utils.Map, error)
+	Get(InvoiceId string) (utils.Map, error)
 	Find(filter string) (utils.Map, error)
 	Create(indata utils.Map) (utils.Map, error)
-	Update(invoiceId string, indata utils.Map) (utils.Map, error)
-	Delete(invoiceId string, deletePermanent bool) error
+	Update(InvoiceId string, indata utils.Map) (utils.Map, error)
+	Delete(InvoiceId string, delete_permanent bool) error
 
 	BeginTransaction()
 	CommitTransaction()
@@ -28,10 +27,12 @@ type InvoiceService interface {
 	EndService()
 }
 
+// InvoiceBaseService - Invoices Service structure
 type InvoiceBaseService struct {
 	db_utils.DatabaseService
 	daoInvoice platform_repository.InvoiceDao
-	child      InvoiceService
+	child       InvoiceService
+	businessID string
 }
 
 func init() {
@@ -39,24 +40,26 @@ func init() {
 }
 
 func NewInvoiceService(props utils.Map) (InvoiceService, error) {
-	p := InvoiceBaseService{}
-	log.Printf("NewInvoiceService :: Start")
 
+	p := InvoiceBaseService{}
 	err := p.OpenDatabaseService(props)
 	if err != nil {
-		log.Println("NewInvoiceService ", err)
+		log.Println("NewIndustryDBService ", err)
 		return nil, err
 	}
+	log.Printf("IndustryDBService ")
 
+	// Instantiate other services
 	p.daoInvoice = platform_repository.NewInvoiceDao(p.GetClient())
+
 	p.child = &p
 
 	return &p, nil
 }
 
 func (p *InvoiceBaseService) EndService() {
-	log.Printf("EndInvoiceBaseService ")
 	p.CloseDatabaseService()
+
 }
 
 // List - List All records
@@ -64,50 +67,50 @@ func (p *InvoiceBaseService) List(filter string, sort string, skip int64, limit 
 
 	log.Println("InvoiceService::FindAll - Begin")
 
-	dataresponse, err := p.daoInvoice.List(filter, sort, skip, limit)
+	daoInvoice := p.daoInvoice
+	response, err := daoInvoice.List(filter, sort, skip, limit)
 	if err != nil {
 		return nil, err
 	}
+
 	log.Println("InvoiceService::FindAll - End ")
-	return dataresponse, nil
+	return response, nil
 }
 
-// GetDetails - Find By Code
-func (p *InvoiceBaseService) Get(invoiceId string) (utils.Map, error) {
-	log.Printf("InvoiceService::GetDetails::  Begin %v", invoiceId)
+// FindByCode - Find By Code
+func (p *InvoiceBaseService) Get(InvoiceId string) (utils.Map, error) {
+	log.Printf("InvoiceService::FindByCode::  Begin %v", InvoiceId)
 
-	data, err := p.daoInvoice.Get(invoiceId)
-
-	log.Println("InvoiceService::GetDetails:: End ", data, err)
+	data, err := p.daoInvoice.Get(InvoiceId)
+	log.Println("InvoiceService::FindByCode:: End ", err)
 	return data, err
 }
 
 func (p *InvoiceBaseService) Find(filter string) (utils.Map, error) {
-	fmt.Println("InvoiceService::GetDetails::  Begin ", filter)
+	log.Println("InvoiceService::FindByCode::  Begin ", filter)
 
 	data, err := p.daoInvoice.Find(filter)
-
-	log.Println("InvoiceService::GetDetails:: End ", data, err)
+	log.Println("InvoiceService::FindByCode:: End ", data, err)
 	return data, err
 }
 
 func (p *InvoiceBaseService) Create(indata utils.Map) (utils.Map, error) {
 
-	log.Println("InvoiceService::Create - Begin")
+	log.Println("UserService::Create - Begin")
 
-	var invoiceId string
+	var InvoiceId string
 
 	dataval, dataok := indata[platform_common.FLD_INVOICE_ID]
 	if dataok {
-		invoiceId = strings.ToLower(dataval.(string))
+		InvoiceId = strings.ToLower(dataval.(string))
 	} else {
-		invoiceId = utils.GenerateUniqueId("inice_")
-		log.Println("Unique Invoice ID", invoiceId)
+		InvoiceId = utils.GenerateUniqueId("inice")
+		log.Println("Unique Invoice ID", InvoiceId)
 	}
-	indata[platform_common.FLD_INVOICE_ID] = invoiceId
-	log.Println("Provided Invoice ID:",invoiceId)
+	indata[platform_common.FLD_INVOICE_ID] = InvoiceId
+	log.Println("Provided Invoice ID:", InvoiceId)
 
-	_, err := p.daoInvoice.Get(invoiceId)
+	_, err := p.daoInvoice.Get(InvoiceId)
 	if err == nil {
 		err := &utils.AppError{ErrorCode: "S30102", ErrorMsg: "Existing Invoice ID !", ErrorDetail: "Given Invoice ID already exist"}
 		return indata, err
@@ -117,36 +120,44 @@ func (p *InvoiceBaseService) Create(indata utils.Map) (utils.Map, error) {
 	if err != nil {
 		return indata, err
 	}
-	log.Println("InvoiceService::Create - End ", insertResult)
+	log.Println("UserService::Create - End ", insertResult)
 	return indata, err
 }
 
 // Update - Update Service
-func (p *InvoiceBaseService) Update(invoiceId string, indata utils.Map) (utils.Map, error) {
+func (p *InvoiceBaseService) Update(InvoiceId string, indata utils.Map) (utils.Map, error) {
 
 	log.Println("InvoiceService::Update - Begin")
 
-	data, err := p.daoInvoice.Update(invoiceId, indata)
+	data, err := p.daoInvoice.Get(InvoiceId)
+	if err != nil {
+		return data, err
+	}
 
+	// Delete key fields
+	delete(indata, platform_common.FLD_INVOICE_ID)
+	delete(indata, platform_common.FLD_BUSINESS_ID)
+
+	data, err = p.daoInvoice.Update(InvoiceId, indata)
 	log.Println("InvoiceService::Update - End ")
 	return data, err
 }
 
 // Delete - Delete Service
-func (p *InvoiceBaseService) Delete(invoiceId string, deletePermanent bool) error {
+func (p *InvoiceBaseService) Delete(InvoiceId string, delete_permanent bool) error {
 
-	log.Println("InvoiceService::Delete - Begin", invoiceId)
+	log.Println("InvoiceService::Delete - Begin", InvoiceId)
 
-	if deletePermanent {
-		result, err := p.daoInvoice.Delete(invoiceId)
+	daoInvoice := p.daoInvoice
+	if delete_permanent {
+		result, err := daoInvoice.Delete(InvoiceId)
 		if err != nil {
 			return err
 		}
 		log.Printf("Delete %v", result)
 	} else {
 		indata := utils.Map{db_common.FLD_IS_DELETED: true}
-
-		data, err := p.Update(invoiceId, indata)
+		data, err := p.Update(InvoiceId, indata)
 		if err != nil {
 			return err
 		}
@@ -155,4 +166,10 @@ func (p *InvoiceBaseService) Delete(invoiceId string, deletePermanent bool) erro
 
 	log.Printf("InvoiceService::Delete - End")
 	return nil
+}
+
+func (p *InvoiceBaseService) errorReturn(err error) (InvoiceService, error) {
+	// Close the Database Connection
+	p.EndService()
+	return nil, err
 }
