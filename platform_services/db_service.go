@@ -1,4 +1,4 @@
-package platform_service
+package platform_services
 
 import (
 	"log"
