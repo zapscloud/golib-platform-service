@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/rs/xid v1.5.0
 	github.com/zapscloud/golib-dbutils v1.1.1-0.20231016071702-b6e244391427
-	github.com/zapscloud/golib-platform-repository v0.0.0-20231031103720-b9f32a0e966a
+	github.com/zapscloud/golib-platform-repository v0.0.0-20231104045312-797a30003891
 	github.com/zapscloud/golib-utils v1.0.1-0.20231013125100-bb65f5737443
 )
 

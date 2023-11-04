@@ -19,6 +19,7 @@ type industryBaseService struct {
 	db_utils.DatabaseService
 	daoIndustry platform_repository.IndustryDao
 	child       IndustryService
+	
 }
 
 func NewIndustryService(props utils.Map) (IndustryService, error) {
