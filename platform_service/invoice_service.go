@@ -1,4 +1,4 @@
-package platform_services
+package platform_service
 
 import (
 	"log"
@@ -31,8 +31,7 @@ type InvoiceService interface {
 type InvoiceBaseService struct {
 	db_utils.DatabaseService
 	daoInvoice platform_repository.InvoiceDao
-	child       InvoiceService
-	businessID string
+	child      InvoiceService
 }
 
 func init() {
@@ -166,10 +165,4 @@ func (p *InvoiceBaseService) Delete(InvoiceId string, delete_permanent bool) err
 
 	log.Printf("InvoiceService::Delete - End")
 	return nil
-}
-
-func (p *InvoiceBaseService) errorReturn(err error) (InvoiceService, error) {
-	// Close the Database Connection
-	p.EndService()
-	return nil, err
 }
