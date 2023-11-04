@@ -1,4 +1,4 @@
-package platform_services
+package platform_service
 
 import (
 	"fmt"
