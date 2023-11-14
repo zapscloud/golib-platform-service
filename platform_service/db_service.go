@@ -78,6 +78,11 @@ func getRegionAndTenantDBInfo(props utils.Map) (utils.Map, error) {
 	isTenantDB, _ := utils.GetMemberDataBool(dataBusiness, platform_common.FLD_BUSINESS_IS_TENANT_DB)
 	if isTenantDB {
 		dbName = dbName + "-" + businessId
+		// **** IMPORTANT ******: The maximum allowed database name length in MongoDB is only 38 bytes
+		mongoDBAllowedLen := 38
+		if len(dbName) > mongoDBAllowedLen {
+			dbName = utils.Right(dbName, mongoDBAllowedLen)
+		}
 	}
 
 	// Create Region's Database Props
