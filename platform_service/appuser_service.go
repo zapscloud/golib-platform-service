@@ -24,6 +24,7 @@ type AppUserService interface {
 	Authenticate(auth_key string, auth_user string, auth_pwd string) (utils.Map, error)
 	ChangePassword(userId string, newpwd string) (utils.Map, error)
 
+	BusinessUser(businessId, userId string) (utils.Map, error)
 	BusinessList(userId string, filter string, sort string, skip int64, limit int64) (utils.Map, error)
 
 	BeginTransaction()
@@ -216,6 +217,20 @@ func (p *appUserBaseService) ChangePassword(userId string, newpwd string) (utils
 	data, err := p.daoAppUser.Update(userId, indata)
 
 	log.Println("AppUserService::ChangePassword - End ")
+	return data, err
+}
+
+func (p *appUserBaseService) BusinessUser(businessId, userId string) (utils.Map, error) {
+	log.Println("AppUserService::BusinessUser - Begin", businessId, userId)
+
+	_, err := p.daoAppUser.Get(userId)
+	if err != nil {
+		return utils.Map{}, err
+	}
+
+	data, err := p.daoAppUser.BusinessUser(businessId, userId)
+
+	log.Println("AppUserService::GetDetails:: End ", data, err)
 	return data, err
 }
 
