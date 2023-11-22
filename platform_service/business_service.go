@@ -38,8 +38,11 @@ type BusinessService interface {
 	// AddUser Business & User
 	AddUser(businessId string, userId string) (utils.Map, error)
 
+	// UpdateUser Business & User
+	UpdateUser(businessId, userId string, dataUpdate utils.Map) (utils.Map, error)
+
 	// RemoveUser User from Business
-	RemoveUser(businessId string, userId string) (string, error)
+	RemoveUser(businessId, userId string, deletePermanent bool) (string, error)
 
 	// Get Access Details
 	GetUserDetails(businessId string, userId string) (utils.Map, error)
@@ -236,7 +239,7 @@ func (p *businessBaseService) AddUser(businessId string, userId string) (utils.M
 		platform_common.FLD_BUSINESS_USER_ID: utils.GetMD5Hash(businessId + "_" + userId),
 		platform_common.FLD_BUSINESS_ID:      businessId,
 		platform_common.FLD_APP_USER_ID:      userId,
-		db_common.FLD_IS_DELETED:             true,
+		db_common.FLD_IS_DELETED:             false,
 	}
 
 	dataUser, err := p.daoBusiness.AddUser(indata)
@@ -247,7 +250,37 @@ func (p *businessBaseService) AddUser(businessId string, userId string) (utils.M
 	return dataUser, nil
 }
 
-func (p *businessBaseService) RemoveUser(businessId string, userId string) (string, error) {
+// AddUser - Grand Access for the Business
+func (p *businessBaseService) UpdateUser(businessId, userId string, dataUpdate utils.Map) (utils.Map, error) {
+
+	log.Println("UserService::UpdateUser - Begin")
+
+	_, err := p.daoBusiness.Get(businessId)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.daoAppUser.Get(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Delete unique data
+	delete(dataUpdate, platform_common.FLD_BUSINESS_USER_ID)
+	delete(dataUpdate, platform_common.FLD_BUSINESS_ID)
+	delete(dataUpdate, platform_common.FLD_APP_USER_ID)
+
+	accessid := utils.GetMD5Hash(businessId + "_" + userId)
+	dataUser, err := p.daoBusiness.UpdateUser(accessid, dataUpdate)
+	if err != nil {
+		return dataUser, err
+	}
+
+	log.Println("UserService::Create - End ")
+	return dataUser, nil
+}
+
+func (p *businessBaseService) RemoveUser(businessId string, userId string, deletePermanent bool) (string, error) {
 
 	log.Println("UserService::RemoveUser - Begin")
 
@@ -268,13 +301,17 @@ func (p *businessBaseService) RemoveUser(businessId string, userId string) (stri
 	}
 	log.Println("SysBusinessService::RemoveUser ", data)
 
-	revokeresponse, err := p.daoBusiness.RemoveUser(accessid)
-	if err != nil {
-		return "", err
+	if deletePermanent {
+		_, err = p.daoBusiness.RemoveUser(accessid)
+	} else {
+		indata := utils.Map{
+			db_common.FLD_IS_DELETED: true,
+		}
+		_, err = p.daoBusiness.UpdateUser(accessid, indata)
 	}
 
-	log.Println("UserService::RemoveUser - End ", revokeresponse)
-	return revokeresponse, nil
+	log.Println("UserService::RemoveUser - End ", accessid)
+	return accessid, err
 }
 
 // GetDetails - Find By Code
