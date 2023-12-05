@@ -103,7 +103,7 @@ func (p *PaymentsBaseService) Create(indata utils.Map) (utils.Map, error) {
 	if dataok {
 		PaymentsId = strings.ToLower(dataval.(string))
 	} else {
-		PaymentsId = utils.GenerateUniqueId("inice")
+		PaymentsId = utils.GenerateUniqueId("pay_")
 		log.Println("Unique Payments ID", PaymentsId)
 	}
 	indata[platform_common.FLD_PAYMENT_ID] = PaymentsId
