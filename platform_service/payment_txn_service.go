@@ -3,7 +3,9 @@ package platform_service
 import (
 	"log"
 	"strings"
+	"time"
 
+	"github.com/zapscloud/golib-business-repository/business_common"
 	"github.com/zapscloud/golib-dbutils/db_common"
 	"github.com/zapscloud/golib-dbutils/db_utils"
 	"github.com/zapscloud/golib-platform-repository/platform_common"
@@ -31,7 +33,7 @@ type Payment_txnService interface {
 type Payment_txnBaseService struct {
 	db_utils.DatabaseService
 	daoPayment_txn platform_repository.Payment_txnDao
-	child      Payment_txnService
+	child          Payment_txnService
 }
 
 func init() {
@@ -97,6 +99,11 @@ func (p *Payment_txnBaseService) Create(indata utils.Map) (utils.Map, error) {
 
 	log.Println("UserService::Create - Begin")
 
+	// Get Timezone Location
+	loc, err := p.getTimezoneLocation(indata)
+	if err != nil {
+		return indata, err
+	}
 	var Payment_txn_Id string
 
 	dataval, dataok := indata[platform_common.FLD_PAYMENT_TXN_ID]
@@ -106,6 +113,8 @@ func (p *Payment_txnBaseService) Create(indata utils.Map) (utils.Map, error) {
 		Payment_txn_Id = utils.GenerateUniqueId("pay_txn")
 		log.Println("Unique Payment_txn ID", Payment_txn_Id)
 	}
+	dateTime := time.Now().In(loc).Format(time.DateTime)
+	indata[platform_common.FLD_DATE_TIME] = dateTime
 	indata[platform_common.FLD_PAYMENT_TXN_ID] = Payment_txn_Id
 	log.Println("Provided Payment_txn ID:", Payment_txn_Id)
 
@@ -165,4 +174,23 @@ func (p *Payment_txnBaseService) Delete(Payment_txn_Id string, delete_permanent 
 
 	log.Printf("Payment_txnService::Delete - End")
 	return nil
+}
+func (p *Payment_txnBaseService) getTimezoneLocation(indata utils.Map) (*time.Location, error) {
+	// Get Timezone Information from
+	businessTimezone, err := utils.GetMemberDataStr(indata, business_common.FLD_BUSINESS_TIMEZONE)
+	if err != nil {
+		err := &utils.AppError{ErrorCode: "S30102", ErrorMsg: "No Timezone", ErrorDetail: "No Timezone Information sent"}
+		return nil, err
+	}
+	// Load Location
+	loc, err := time.LoadLocation(businessTimezone)
+	if err != nil {
+		err := &utils.AppError{ErrorCode: "S30102", ErrorMsg: "Invalid Timezone", ErrorDetail: "Timezone Information is invalid"}
+		return nil, err
+	}
+
+	// Remove Timezone from indata
+	delete(indata, business_common.FLD_BUSINESS_TIMEZONE)
+
+	return loc, nil
 }
