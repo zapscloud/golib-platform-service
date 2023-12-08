@@ -118,7 +118,7 @@ func (p *Payment_txnBaseService) Create(indata utils.Map) (utils.Map, error) {
 	indata[platform_common.FLD_PAYMENT_TXN_ID] = Payment_txn_Id
 	log.Println("Provided Payment_txn ID:", Payment_txn_Id)
 
-	_, err := p.daoPayment_txn.Get(Payment_txn_Id)
+	_, err = p.daoPayment_txn.Get(Payment_txn_Id)
 	if err == nil {
 		err := &utils.AppError{ErrorCode: "S30102", ErrorMsg: "Existing Payment_txn ID !", ErrorDetail: "Given Payment_txn ID already exist"}
 		return indata, err
