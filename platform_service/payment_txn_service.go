@@ -12,14 +12,14 @@ import (
 	"github.com/zapscloud/golib-utils/utils"
 )
 
-// Payment_txnService - Payment_txns Service structure
-type Payment_txnService interface {
+// PaymentTxnService - PaymentTxns Service structure
+type PaymentTxnService interface {
 	List(filter string, sort string, skip int64, limit int64) (utils.Map, error)
-	Get(Payment_txnId string) (utils.Map, error)
+	Get(PaymentTxnId string) (utils.Map, error)
 	Find(filter string) (utils.Map, error)
 	Create(indata utils.Map) (utils.Map, error)
-	Update(Payment_txnId string, indata utils.Map) (utils.Map, error)
-	Delete(Payment_txnId string, delete_permanent bool) error
+	Update(PaymentTxnId string, indata utils.Map) (utils.Map, error)
+	Delete(PaymentTxnId string, delete_permanent bool) error
 
 	BeginTransaction()
 	CommitTransaction()
@@ -28,20 +28,20 @@ type Payment_txnService interface {
 	EndService()
 }
 
-// Payment_txnBaseService - Payment_txns Service structure
-type Payment_txnBaseService struct {
+// PaymentTxnBaseService - PaymentTxns Service structure
+type PaymentTxnBaseService struct {
 	db_utils.DatabaseService
-	daoPayment_txn platform_repository.Payment_txnDao
-	child          Payment_txnService
+	daoPaymentTxn platform_repository.PaymentTxnDao
+	child         PaymentTxnService
 }
 
 func init() {
 	log.SetFlags(log.Lshortfile | log.LstdFlags | log.Lmicroseconds)
 }
 
-func NewPayment_txnService(props utils.Map) (Payment_txnService, error) {
+func NewPaymentTxnService(props utils.Map) (PaymentTxnService, error) {
 
-	p := Payment_txnBaseService{}
+	p := PaymentTxnBaseService{}
 	err := p.OpenDatabaseService(props)
 	if err != nil {
 		log.Println("NewIndustryDBService ", err)
@@ -50,75 +50,75 @@ func NewPayment_txnService(props utils.Map) (Payment_txnService, error) {
 	log.Printf("IndustryDBService ")
 
 	// Instantiate other services
-	p.daoPayment_txn = platform_repository.NewPayment_txnDao(p.GetClient())
+	p.daoPaymentTxn = platform_repository.NewPaymentTxnDao(p.GetClient())
 
 	p.child = &p
 
 	return &p, nil
 }
 
-func (p *Payment_txnBaseService) EndService() {
+func (p *PaymentTxnBaseService) EndService() {
 	p.CloseDatabaseService()
 
 }
 
 // List - List All records
-func (p *Payment_txnBaseService) List(filter string, sort string, skip int64, limit int64) (utils.Map, error) {
+func (p *PaymentTxnBaseService) List(filter string, sort string, skip int64, limit int64) (utils.Map, error) {
 
-	log.Println("Payment_txnService::FindAll - Begin")
+	log.Println("PaymentTxnService::FindAll - Begin")
 
-	daoPayment_txn := p.daoPayment_txn
-	response, err := daoPayment_txn.List(filter, sort, skip, limit)
+	daoPaymentTxn := p.daoPaymentTxn
+	response, err := daoPaymentTxn.List(filter, sort, skip, limit)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Println("Payment_txnService::FindAll - End ")
+	log.Println("PaymentTxnService::FindAll - End ")
 	return response, nil
 }
 
 // FindByCode - Find By Code
-func (p *Payment_txnBaseService) Get(Payment_txnId string) (utils.Map, error) {
-	log.Printf("Payment_txnService::FindByCode::  Begin %v", Payment_txnId)
+func (p *PaymentTxnBaseService) Get(PaymentTxnId string) (utils.Map, error) {
+	log.Printf("PaymentTxnService::FindByCode::  Begin %v", PaymentTxnId)
 
-	data, err := p.daoPayment_txn.Get(Payment_txnId)
-	log.Println("Payment_txnService::FindByCode:: End ", err)
+	data, err := p.daoPaymentTxn.Get(PaymentTxnId)
+	log.Println("PaymentTxnService::FindByCode:: End ", err)
 	return data, err
 }
 
-func (p *Payment_txnBaseService) Find(filter string) (utils.Map, error) {
-	log.Println("Payment_txnService::FindByCode::  Begin ", filter)
+func (p *PaymentTxnBaseService) Find(filter string) (utils.Map, error) {
+	log.Println("PaymentTxnService::FindByCode::  Begin ", filter)
 
-	data, err := p.daoPayment_txn.Find(filter)
-	log.Println("Payment_txnService::FindByCode:: End ", data, err)
+	data, err := p.daoPaymentTxn.Find(filter)
+	log.Println("PaymentTxnService::FindByCode:: End ", data, err)
 	return data, err
 }
 
-func (p *Payment_txnBaseService) Create(indata utils.Map) (utils.Map, error) {
+func (p *PaymentTxnBaseService) Create(indata utils.Map) (utils.Map, error) {
 
 	log.Println("UserService::Create - Begin")
 
-	var Payment_txn_Id string
+	var PaymentTxn_Id string
 
 	dataval, dataok := indata[platform_common.FLD_PAYMENT_TXN_ID]
 	if dataok {
-		Payment_txn_Id = strings.ToLower(dataval.(string))
+		PaymentTxn_Id = strings.ToLower(dataval.(string))
 	} else {
-		Payment_txn_Id = utils.GenerateUniqueId("pay_txn")
-		log.Println("Unique Payment_txn ID", Payment_txn_Id)
+		PaymentTxn_Id = utils.GenerateUniqueId("pay_txn")
+		log.Println("Unique PaymentTxn ID", PaymentTxn_Id)
 	}
 	dateTime := time.Now().Format(time.DateTime)
 	indata[platform_common.FLD_DATE_TIME] = dateTime
-	indata[platform_common.FLD_PAYMENT_TXN_ID] = Payment_txn_Id
-	log.Println("Provided Payment_txn ID:", Payment_txn_Id)
+	indata[platform_common.FLD_PAYMENT_TXN_ID] = PaymentTxn_Id
+	log.Println("Provided PaymentTxn ID:", PaymentTxn_Id)
 
-	_, err := p.daoPayment_txn.Get(Payment_txn_Id)
+	_, err := p.daoPaymentTxn.Get(PaymentTxn_Id)
 	if err == nil {
-		err := &utils.AppError{ErrorCode: "S30102", ErrorMsg: "Existing Payment_txn ID !", ErrorDetail: "Given Payment_txn ID already exist"}
+		err := &utils.AppError{ErrorCode: "S30102", ErrorMsg: "Existing PaymentTxn ID !", ErrorDetail: "Given PaymentTxn ID already exist"}
 		return indata, err
 	}
 
-	insertResult, err := p.daoPayment_txn.Create(indata)
+	insertResult, err := p.daoPaymentTxn.Create(indata)
 	if err != nil {
 		return indata, err
 	}
@@ -127,11 +127,11 @@ func (p *Payment_txnBaseService) Create(indata utils.Map) (utils.Map, error) {
 }
 
 // Update - Update Service
-func (p *Payment_txnBaseService) Update(Payment_txn_Id string, indata utils.Map) (utils.Map, error) {
+func (p *PaymentTxnBaseService) Update(PaymentTxnId string, indata utils.Map) (utils.Map, error) {
 
-	log.Println("Payment_txnService::Update - Begin")
+	log.Println("PaymentTxnService::Update - Begin")
 
-	data, err := p.daoPayment_txn.Get(Payment_txn_Id)
+	data, err := p.daoPaymentTxn.Get(PaymentTxnId)
 	if err != nil {
 		return data, err
 	}
@@ -140,32 +140,32 @@ func (p *Payment_txnBaseService) Update(Payment_txn_Id string, indata utils.Map)
 	delete(indata, platform_common.FLD_PAYMENT_TXN_ID)
 	delete(indata, platform_common.FLD_BUSINESS_ID)
 
-	data, err = p.daoPayment_txn.Update(Payment_txn_Id, indata)
-	log.Println("Payment_txnService::Update - End ")
+	data, err = p.daoPaymentTxn.Update(PaymentTxnId, indata)
+	log.Println("PaymentTxnService::Update - End ")
 	return data, err
 }
 
 // Delete - Delete Service
-func (p *Payment_txnBaseService) Delete(Payment_txn_Id string, delete_permanent bool) error {
+func (p *PaymentTxnBaseService) Delete(PaymentTxnId string, delete_permanent bool) error {
 
-	log.Println("Payment_txnService::Delete - Begin", Payment_txn_Id)
+	log.Println("PaymentTxnService::Delete - Begin", PaymentTxnId)
 
-	daoPayment_txn := p.daoPayment_txn
+	daoPaymentTxn := p.daoPaymentTxn
 	if delete_permanent {
-		result, err := daoPayment_txn.Delete(Payment_txn_Id)
+		result, err := daoPaymentTxn.Delete(PaymentTxnId)
 		if err != nil {
 			return err
 		}
 		log.Printf("Delete %v", result)
 	} else {
 		indata := utils.Map{db_common.FLD_IS_DELETED: true}
-		data, err := p.Update(Payment_txn_Id, indata)
+		data, err := p.Update(PaymentTxnId, indata)
 		if err != nil {
 			return err
 		}
 		log.Println("Update for Delete Flag", data)
 	}
 
-	log.Printf("Payment_txnService::Delete - End")
+	log.Printf("PaymentTxnService::Delete - End")
 	return nil
 }
